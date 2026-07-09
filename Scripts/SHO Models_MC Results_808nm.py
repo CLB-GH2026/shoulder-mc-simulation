@@ -31,7 +31,7 @@ Source positions (default):
 
 Dependencies:
     pip install numpy trimesh pmcx plotly scipy
-    pip install git+https://github.com/CLB-GH2026/pbm-mc-core.git@v0.1.0
+    pip install git+https://github.com/CLB-GH2026/pbm-mc-core.git@v0.1.1
 """
 
 import numpy as np
@@ -259,6 +259,11 @@ def run_subject(subject_id, mesh_dir_base, output_dir, melanin_condition='fair')
         cart_flu_mw = (sum(results[n]['mean_flu'] * results[n]['n_voxels']
                            for n in cart_names) / cart_vox) if cart_vox > 0 else 0.0
 
+        labrum_names   = [n for n in results if 'labrum' in n]
+        labrum_vox     = sum(results[n]['n_voxels'] for n in labrum_names)
+        labrum_flu_mw  = (sum(results[n]['mean_flu'] * results[n]['n_voxels']
+                              for n in labrum_names) / labrum_vox) if labrum_vox > 0 else 0.0
+
         syn_names   = [n for n in results if 'synovial' in n]
         syn_vox     = sum(results[n]['n_voxels'] for n in syn_names)
         syn_flu_mw  = (sum(results[n]['mean_flu'] * results[n]['n_voxels']
@@ -268,10 +273,19 @@ def run_subject(subject_id, mesh_dir_base, output_dir, melanin_condition='fair')
         bin_centers, mean_flu, max_depth = analyze_penetration_depth(
             fluence_combined, vol, VOXEL_SIZE, mesh_center, origin
         )
+        # Shoulder anatomy depth references (approximate, posterior access) —
+        # NOT knee's zone; the glenohumeral joint sits much deeper than the
+        # knee's joint line, so this must be passed explicitly (see
+        # pbm_mc_core.analysis.plot_depth_histogram docstring).
         fig_depth = plot_depth_histogram(
             bin_centers, mean_flu, subject_id, WAVELENGTH_NM,
-            cartilage_flu_mw=cart_flu_mw,
-            synovial_flu_mw=syn_flu_mw,
+            depth_refs=[(1.0, 'Skin/Adipose'), (2.5, 'Muscle'), (4.5, 'GH Joint')],
+            zone_lo=2.5, zone_hi=4.5,
+            group_flu_mw={
+                'Cartilage': cart_flu_mw,
+                'Labrum': labrum_flu_mw,
+                'Synovial Fluid': syn_flu_mw,
+            },
         )
         depth_html = str(subj_dir / f"depth_histogram_{subject_id}_{melanin_condition}.html")
         fig_depth.write_html(depth_html)
