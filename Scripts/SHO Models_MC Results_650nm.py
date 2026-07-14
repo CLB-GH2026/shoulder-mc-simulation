@@ -175,7 +175,7 @@ def run_subject(subject_id, mesh_dir_base, output_dir, melanin_condition='fair')
         vol, origin, mesh_center = build_label_volume(
             tissues, VOXEL_RES, VOXEL_SIZE,
             auto_orient=AUTO_ORIENT,
-            orient_ref_a='humerus-bone', orient_ref_b='scapula-bone',
+            orient_ref_a='scapula-bone', orient_ref_b='humerus-bone',
         )
 
         bone_labels      = [t[1] for name, t in tissues.items() if "bone" in name]
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     # Required STL files per subject (see TISSUE TABLE above):
     #   humerus_raw.stl, scapula_raw.stl, clavicle_raw.stl,
     #   humeral_cartilage_raw.stl, glenoid_cartilage_raw.stl, labrum_raw.stl
-    SUBJECT_IDS = []   # e.g. ["SHO001", "SHO002"]
+    SUBJECT_IDS = ["SHO001"]   # e.g. ["SHO001", "SHO002"]
 
     BASE_DIR   = Path(".")
     RUN_ID     = datetime.now().strftime("%Y%m%d_%H%M%S")
