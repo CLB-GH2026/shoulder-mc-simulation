@@ -20,6 +20,7 @@ Dependencies:
 """
 
 import numpy as np
+import os
 import time
 from pathlib import Path
 from datetime import datetime
@@ -29,12 +30,16 @@ from pbm_mc_core import (
     build_label_volume,
     add_synovial_fluid, add_wrapping_layers, add_epidermis_layer,
     find_joint_line_z, find_surface_source_positions,
+    save_fluence_overlay,
     run_pmcx,
     analyze_combined_absorption, analyze_penetration_depth, plot_depth_histogram,
     target_depth_zone, results_to_csv, melanin_comparison_to_csv,
 )
 
 start_time = time.perf_counter()
+
+# Auto-open each 3D fluence overlay in the browser (set PBM_AUTO_OPEN_HTML=0 to suppress).
+AUTO_OPEN_HTML = os.environ.get("PBM_AUTO_OPEN_HTML", "1") != "0"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. CONFIGURATION
@@ -243,6 +248,16 @@ def run_subject(subject_id, mesh_dir_base, output_dir, melanin_condition='fair')
         np.save(subj_dir / "fluence_808.npy", flu_808)
         np.save(subj_dir / "fluence_650.npy", flu_650)
         np.save(subj_dir / "fluence_combined.npy", flu_comb)
+
+        try:
+            save_fluence_overlay(
+                vol, flu_comb, [],
+                [flu_comb], ['Combined 650+808'],
+                tissues_808, origin, VOXEL_SIZE, pmcx_source_plus,
+                subj_dir / f"fluence_overlay_{subject_id}_{melanin_condition}_combined.html",
+                mesh_center=mesh_center, auto_open=AUTO_OPEN_HTML)
+        except Exception as _e:
+            print(f"  WARNING: 3D overlay skipped: {_e}")
 
         return subject_id, results
 
