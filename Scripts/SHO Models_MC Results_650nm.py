@@ -95,7 +95,7 @@ FLUENCE_OUTPUT = None             # None = run pmcx; path string = load saved .n
 # Rotator cuff:       ~10 mm (infraspinatus / supraspinatus)
 # Subcutaneous fat:    ~5 mm typical
 # Skin dermis:         ~2 mm
-MUSCLE_THICK_MM  = 20
+MUSCLE_THICK_MM  = 15   # anterior/superior access window (was 20; uniform wrap overestimates anterior depth)
 ADIPOSE_THICK_MM =  5
 SKIN_THICK_MM    =  2
 
@@ -118,7 +118,7 @@ GROUPS = {
     'Synovial':  lambda n: 'synovial' in n,
     'Muscle':    lambda n: 'muscle'   in n,
     'Adipose':   lambda n: 'adipose'  in n,
-    'Skin':      lambda n: 'skin'     in n,
+    'Skin+Epidermis': lambda n: ('skin' in n) or ('epidermis' in n),
 }
 # Cross-subject dose summary (results_to_csv Section 4) — joint + muscle
 # targets only, mirroring the knee pipeline's narrower DOSE_GROUPS.
