@@ -47,6 +47,7 @@ from pbm_mc_core import (
     optimize_source_positions_reciprocity,
     run_pmcx,
     analyze_fluence_absorption, analyze_penetration_depth, plot_depth_histogram,
+    target_depth_zone,
     results_to_csv, melanin_comparison_to_csv,
 )
 
@@ -277,10 +278,19 @@ def run_subject(subject_id, mesh_dir_base, output_dir, melanin_condition='fair')
         # NOT knee's zone; the glenohumeral joint sits much deeper than the
         # knee's joint line, so this must be passed explicitly (see
         # pbm_mc_core.analysis.plot_depth_histogram docstring).
+        # Data-driven dose-integration zone: the actual depth band (from the
+        # skin surface) spanned by the target tissues in THIS model, rather than
+        # a hardcoded anatomical guess (the glenohumeral targets sit ~1.5-2.2 cm
+        # deep here, not the 4.5 cm a generic GH-joint estimate would assume).
+        z_lo, z_hi, z_med = target_depth_zone(vol, tissues, VOXEL_SIZE, TARGET_MATCH_FN)
+        if z_lo is None:
+            z_lo, z_hi, z_med = 2.0, 3.5, 2.5   # fallback if no target voxels
+        print(f"  Target depth zone: {z_lo:.2f}-{z_hi:.2f} cm (median {z_med:.2f} cm)")
+
         fig_depth = plot_depth_histogram(
             bin_centers, mean_flu, subject_id, WAVELENGTH_NM,
-            depth_refs=[(1.0, 'Skin/Adipose'), (2.5, 'Muscle'), (4.5, 'GH Joint')],
-            zone_lo=2.5, zone_hi=4.5,
+            depth_refs=[(z_med, 'Cartilage/labrum/synovial (targets)')],
+            zone_lo=z_lo, zone_hi=z_hi,
             group_flu_mw={
                 'Cartilage': cart_flu_mw,
                 'Labrum': labrum_flu_mw,
