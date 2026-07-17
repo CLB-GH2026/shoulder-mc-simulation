@@ -42,6 +42,14 @@ start_time = time.perf_counter()
 # Auto-open each 3D fluence overlay in the browser (set PBM_AUTO_OPEN_HTML=0 to suppress).
 AUTO_OPEN_HTML = os.environ.get("PBM_AUTO_OPEN_HTML", "1") != "0"
 
+# Reciprocity-optimized source positions are cached per subject and REUSED across
+# melanin conditions. The optimizer is run once (on the first/fair condition) so
+# the melanin comparison isolates skin absorption — otherwise re-optimizing per
+# condition gives each a slightly different placement (optimizer surface-fluence
+# field shifts with epidermis optics + MC noise), which confounds the comparison
+# (e.g. olive spuriously exceeding fair).
+_OPT_POS_CACHE = {}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
@@ -193,11 +201,19 @@ def run_subject(subject_id, mesh_dir_base, output_dir, melanin_condition='fair')
                                  target_match_fn=TARGET_MATCH_FN)
         # Optimize source positions for the joint targets (cart/labrum/synovial)
         # via reciprocity: virtual source at the target centroid -> pick the
-        # surface positions with the highest exit fluence.
-        opt_positions = optimize_source_positions_reciprocity(
-            vol, tissues_808, origin, mesh_center, VOXEL_SIZE,
-            3, 25.0, 1e6, epidermis_label=EPIDERMIS_LABEL,
-            target_match_fn=TARGET_MATCH_FN)
+        # surface positions with the highest exit fluence. Computed once per
+        # subject (on the first condition) and reused across melanin conditions
+        # so the melanin comparison isolates skin absorption, not placement.
+        opt_positions = _OPT_POS_CACHE.get(subject_id)
+        if opt_positions is None:
+            opt_positions = optimize_source_positions_reciprocity(
+                vol, tissues_808, origin, mesh_center, VOXEL_SIZE,
+                3, 25.0, 1e6, epidermis_label=EPIDERMIS_LABEL,
+                target_match_fn=TARGET_MATCH_FN)
+            _OPT_POS_CACHE[subject_id] = opt_positions
+            print(f"  [OPT] optimized positions for {subject_id} (reused across conditions)")
+        else:
+            print(f"  [OPT] reusing optimized positions for {subject_id}")
         if opt_positions:
             _c = ['red', 'green', 'blue', 'orange', 'purple']
             src_configs = [{'name': f'Opt-{i+1}', 'world_pos': list(p),

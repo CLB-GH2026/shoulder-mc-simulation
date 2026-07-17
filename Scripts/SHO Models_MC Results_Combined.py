@@ -143,7 +143,10 @@ def _tissues(mesh_dir, wl, epidermis_opts):
 
 
 def _default_src_configs(jl_z):
-    """Co-located Move+ pad positions (both wavelengths emit from these)."""
+    """Default anterior placement: one posterior + two anterior sources at the
+    joint-line height, aimed at the glenohumeral joint centre. The device-
+    realistic strap and joint-optimized placements live in the dedicated
+    SHO Model_RotatorCuff.py / SHO Model_Joint-Optimized.py scripts."""
     return [
         {'name': 'Posterior',      'world_pos': [  0, -70, jl_z], 'color': 'red'  },
         {'name': 'Anterior (Sup)', 'world_pos': [  0,  55, jl_z], 'color': 'green'},
